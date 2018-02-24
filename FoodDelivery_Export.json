@@ -1,0 +1,331 @@
+{
+  "metadata": {
+    "schemaVersion": "1.0",
+    "importType": "LEX",
+    "importFormat": "JSON"
+  },
+  "resource": {
+    "name": "FoodDelivery",
+    "version": "6",
+    "intents": [
+      {
+        "name": "Help",
+        "version": "2",
+        "fulfillmentActivity": {
+          "type": "CodeHook",
+          "codeHook": {
+            "uri": "arn:aws:lambda:us-east-1:513284067380:function:food_delivery",
+            "messageVersion": "1.0"
+          }
+        },
+        "sampleUtterances": [
+          "help",
+          "what items do you have",
+          "what services can you offer",
+          "what is the menu ",
+          "menu card",
+          "help me"
+        ],
+        "slots": [],
+        "dialogCodeHook": {
+          "uri": "arn:aws:lambda:us-east-1:513284067380:function:food_delivery",
+          "messageVersion": "1.0"
+        }
+      },
+      {
+        "rejectionStatement": {
+          "messages": [
+            {
+              "contentType": "PlainText",
+              "content": "Okay, your order has been cancelled."
+            }
+          ]
+        },
+        "name": "Beverages",
+        "version": "11",
+        "fulfillmentActivity": {
+          "type": "CodeHook",
+          "codeHook": {
+            "uri": "arn:aws:lambda:us-east-1:513284067380:function:food_delivery",
+            "messageVersion": "1.0"
+          }
+        },
+        "sampleUtterances": [
+          "I want something to drink",
+          "i am thirsty",
+          "i want some liquid",
+          "i want to order {drink} ",
+          "i want to order {amount} {drink} ",
+          "i want {amount} {drink} ",
+          "i also want some {drink}",
+          "i want some beverage",
+          "i would like to have {drink}"
+        ],
+        "slots": [
+          {
+            "name": "amount",
+            "slotConstraint": "Required",
+            "slotType": "AMAZON.NUMBER",
+            "valueElicitationPrompt": {
+              "messages": [
+                {
+                  "contentType": "PlainText",
+                  "content": "how many do you want to order?"
+                }
+              ],
+              "maxAttempts": 2,
+              "responseCard": "{\"version\":1,\"contentType\":\"application/vnd.amazonaws.card.generic\"}"
+            },
+            "priority": 2,
+            "sampleUtterances": []
+          },
+          {
+            "name": "drink",
+            "slotConstraint": "Required",
+            "slotType": "Beverages",
+            "slotTypeVersion": "1",
+            "valueElicitationPrompt": {
+              "messages": [
+                {
+                  "contentType": "PlainText",
+                  "content": "which beverange do you want?"
+                }
+              ],
+              "maxAttempts": 2,
+              "responseCard": "{\"version\":1,\"contentType\":\"application/vnd.amazonaws.card.generic\",\"genericAttachments\":[]}"
+            },
+            "priority": 1,
+            "sampleUtterances": []
+          },
+          {
+            "name": "Location",
+            "slotConstraint": "Required",
+            "slotType": "AMAZON.US_CITY",
+            "valueElicitationPrompt": {
+              "messages": [
+                {
+                  "contentType": "PlainText",
+                  "content": "What is your delivery address."
+                },
+                {
+                  "contentType": "PlainText",
+                  "content": "Where should we order it to."
+                }
+              ],
+              "maxAttempts": 2,
+              "responseCard": "{\"version\":1,\"contentType\":\"application/vnd.amazonaws.card.generic\"}"
+            },
+            "priority": 3,
+            "sampleUtterances": []
+          }
+        ],
+        "confirmationPrompt": {
+          "messages": [
+            {
+              "contentType": "PlainText",
+              "content": "The price of your {amount} {drink} is [currentReservationPrice] dollars.Should we confirm it."
+            }
+          ],
+          "maxAttempts": 3
+        },
+        "dialogCodeHook": {
+          "uri": "arn:aws:lambda:us-east-1:513284067380:function:food_delivery",
+          "messageVersion": "1.0"
+        }
+      },
+      {
+        "rejectionStatement": {
+          "messages": [
+            {
+              "contentType": "PlainText",
+              "content": "Okay, we have cancelled your order."
+            }
+          ]
+        },
+        "name": "FastFood",
+        "version": "9",
+        "fulfillmentActivity": {
+          "type": "CodeHook",
+          "codeHook": {
+            "uri": "arn:aws:lambda:us-east-1:513284067380:function:food_delivery",
+            "messageVersion": "1.0"
+          }
+        },
+        "sampleUtterances": [
+          "i want to have some junk food",
+          "i want {Fast}",
+          "I want to order some snacks",
+          "i want to eat something in the evening",
+          "i am hungry",
+          "i want {number} {Fast}",
+          "i would like to have {Fast}",
+          "i want something to eat"
+        ],
+        "slots": [
+          {
+            "name": "address",
+            "slotConstraint": "Required",
+            "slotType": "AMAZON.US_CITY",
+            "valueElicitationPrompt": {
+              "messages": [
+                {
+                  "contentType": "PlainText",
+                  "content": "Where should we order it to?"
+                },
+                {
+                  "contentType": "PlainText",
+                  "content": "What is your delivery address?"
+                }
+              ],
+              "maxAttempts": 2,
+              "responseCard": "{\"version\":1,\"contentType\":\"application/vnd.amazonaws.card.generic\"}"
+            },
+            "priority": 3,
+            "sampleUtterances": []
+          },
+          {
+            "name": "Fast",
+            "slotConstraint": "Required",
+            "slotType": "Snacks",
+            "slotTypeVersion": "1",
+            "valueElicitationPrompt": {
+              "messages": [
+                {
+                  "contentType": "PlainText",
+                  "content": "What do you want to order ?"
+                },
+                {
+                  "contentType": "PlainText",
+                  "content": "What would you like to eat ?"
+                }
+              ],
+              "maxAttempts": 2,
+              "responseCard": "{\"version\":1,\"contentType\":\"application/vnd.amazonaws.card.generic\",\"genericAttachments\":[]}"
+            },
+            "priority": 1,
+            "sampleUtterances": []
+          },
+          {
+            "name": "number",
+            "slotConstraint": "Required",
+            "slotType": "AMAZON.NUMBER",
+            "valueElicitationPrompt": {
+              "messages": [
+                {
+                  "contentType": "PlainText",
+                  "content": "How much do you want to order ?"
+                }
+              ],
+              "maxAttempts": 2,
+              "responseCard": "{\"version\":1,\"contentType\":\"application/vnd.amazonaws.card.generic\"}"
+            },
+            "priority": 2,
+            "sampleUtterances": []
+          }
+        ],
+        "confirmationPrompt": {
+          "messages": [
+            {
+              "contentType": "PlainText",
+              "content": "The price of this {The price of {number} {Fast} is [currentReservationPrice] dollars. Shall we confirm your order?"
+            },
+            {
+              "contentType": "PlainText",
+              "content": "Should we confirm your {number} {Fast} order of [currentReservationPrice] dollars to bring it to {address}?"
+            }
+          ],
+          "maxAttempts": 3
+        },
+        "dialogCodeHook": {
+          "uri": "arn:aws:lambda:us-east-1:513284067380:function:food_delivery",
+          "messageVersion": "1.0"
+        }
+      }
+    ],
+    "slotTypes": [
+      {
+        "name": "Snacks",
+        "version": "1",
+        "enumerationValues": [
+          {
+            "value": "Burger",
+            "synonyms": []
+          },
+          {
+            "value": "Sandwich",
+            "synonyms": []
+          },
+          {
+            "value": "Franky",
+            "synonyms": []
+          },
+          {
+            "value": "Pizza",
+            "synonyms": []
+          },
+          {
+            "value": "Ice Cream",
+            "synonyms": []
+          },
+          {
+            "value": "French Fries",
+            "synonyms": []
+          }
+        ],
+        "valueSelectionStrategy": "ORIGINAL_VALUE"
+      },
+      {
+        "name": "Beverages",
+        "version": "1",
+        "enumerationValues": [
+          {
+            "value": "Coca-Cola",
+            "synonyms": []
+          },
+          {
+            "value": "Wine",
+            "synonyms": []
+          },
+          {
+            "value": "Pepsi",
+            "synonyms": []
+          },
+          {
+            "value": "Whisky",
+            "synonyms": []
+          },
+          {
+            "value": "Frooti",
+            "synonyms": []
+          },
+          {
+            "value": "Beer",
+            "synonyms": []
+          }
+        ],
+        "valueSelectionStrategy": "ORIGINAL_VALUE"
+      }
+    ],
+    "voiceId": "Joanna",
+    "childDirected": false,
+    "locale": "en-US",
+    "idleSessionTTLInSeconds": 60,
+    "clarificationPrompt": {
+      "messages": [
+        {
+          "contentType": "PlainText",
+          "content": "Sorry, can you please repeat that?"
+        }
+      ],
+      "maxAttempts": 5
+    },
+    "abortStatement": {
+      "messages": [
+        {
+          "contentType": "PlainText",
+          "content": "Sorry, I could not understand. Goodbye."
+        }
+      ]
+    }
+  }
+}
