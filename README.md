@@ -1,1 +1,24 @@
-# food-delivery-chatbot
+
+food-delivery-chatbot
+
+IT IS AN INTERACTIVE FOOD DELIVERY CHATBOT MADE BY USING AWS LEX AND AWS LAMBDA.
+
+TO ACCESS MY CHATBOT YOU CAN GO TO THE WEBSITE: (IT TAKES SOME TIME TO SHOW UP THE WIDGET)
+
+http://food-delivery-site.s3-website-us-east-1.amazonaws.com
+
+ALSO MY CHATBOT IS ALSO AVAILABLE ON THE SLACK CHANNEL:
+
+http://skj-lex-chatbots.slack.com
+you can login to this channel using:-
+email-id :-mohitjangirdss.1@gmail.com
+password:- sumitkumar
+
+
+YOU CAN ALSO PROVIDE ME YOUR E-MAIL AND THEN I CAN INVITE YOU TO MY CHANNEL.
+
+FOR LAMBDA CODE GOTO MY GITHUB REPO:
+
+https://github.com/sumitskj/food-delivery-chatbot
+
+*I PREFER YOU TO TEST MY BOT USING THE SLACK CHANNEL BECAUSE IN MY INTEGRATED WEBSITE CHATBOT SOME FUNCTONALITY OF THE BOT IS NOT WORKING SUCH AS OF INTERCONNECTING TWO ORDERS
