@@ -6,6 +6,8 @@ import os
 import dateutil.parser
 import logging
 import boto3
+import uuid
+from botocore.exceptions import ClientError
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -104,7 +106,7 @@ def try_ex(func):
 
 
 def isvalid_snack(snacks_type):
-    snacks = ['burger','franky','pizza','samosa','fries','sandwich']
+    snacks = ['burger','franky','pizza','fries','sandwich']
     return snacks_type.lower() in snacks
 
 
@@ -117,9 +119,12 @@ def isvalid_city(city):
 
 
 def isvalid_beverage(drink_type):
-    beverages = ['beer','thumps_up','coca-cola','pepsi','frooti','appy']
+    beverages = ['beer','coca-cola','pepsi','frooti','appy']
     return drink_type.lower() in beverages
 
+def isvalid_user(login):
+    password = ['sumit']
+    return login.lower() in password
 
 
 
@@ -130,7 +135,20 @@ def build_validation_result(isvalid, violated_slot, message_content):
         'message': {'contentType': 'PlainText', 'content': message_content}
     }
 
+def validate_user(slots):
+    login = try_ex(lambda: slots['login'])
 
+    if login and not isvalid_user(login):
+        return build_validation_result(
+            False,
+            'login',
+            'You have entered a wrong password.'
+        )
+   
+        
+    return {'isValid': True} 
+    
+    
 def validate_beverage(slots):
     location = try_ex(lambda: slots['Location'])
     drink = try_ex(lambda: slots['drink'])
@@ -202,15 +220,15 @@ def build_options(slot, snacks):
             {'text': 'Fries', 'value': 'Fries'},
             {'text': 'Franky', 'value': 'Franky'},
             {'text': 'Burger', 'value': 'Burger'},
-            {'text': 'Sandwich', 'value': 'Sandwich'},
-            {'text': 'Samosa', 'value': 'Samosa'}
+            {'text': 'Sandwich', 'value': 'Sandwich'}
+            
            
         ]
     elif slot == 'drink':
         return [
             {'text': 'Coca-Cola', 'value': 'Coca-cola'},
             {'text': 'Appy', 'value': 'Appy'},
-            {'text': 'Thumps_up', 'value': 'Thumps-Up'},
+            
             {'text': 'Beer', 'value': 'Beer'},
             {'text': 'Frooti', 'value': 'Frooti'},
             {'text': 'Pepsi', 'value': 'Pepsi'}
@@ -225,13 +243,14 @@ def build_options(slot, snacks):
 def order_snacks(intent_request):
    
     dynamo = boto3.resource('dynamodb')
-    table = dynamo.Table('snack_orders')
     
+    table = dynamo.Table('delivery_order')
+    recordId = str(uuid.uuid4())
     location = try_ex(lambda: intent_request['currentIntent']['slots']['address'])
     snacks = try_ex(lambda: intent_request['currentIntent']['slots']['Fast'])
     quantity = safe_int(try_ex(lambda: intent_request['currentIntent']['slots']['number']))
     uid = try_ex(lambda: intent_request['userId'])
-    
+    eid = try_ex(lambda: intent_request['currentIntent']['slots']['email'])
     session_attributes = intent_request['sessionAttributes'] if intent_request['sessionAttributes'] is not None else {}
 
     # Load confirmation history and track the current reservation.
@@ -239,7 +258,8 @@ def order_snacks(intent_request):
         'ReservationType': 'Snacks',
         'address': location,
         'number': quantity,
-        'Fast': snacks
+        'Fast': snacks,
+        'Email':eid
     })
 
     session_attributes['currentReservation'] = reservation
@@ -284,26 +304,59 @@ def order_snacks(intent_request):
     try_ex(lambda: session_attributes.pop('currentReservation'))
     session_attributes['lastConfirmedReservation'] = reservation
     DynamoDict = {
-        'uid': uid,
-        'snack': snacks, 
+        'id': recordId,
+        'item': snacks, 
         'quantity': quantity, 
         'address': location,
-        'price': quantity*11
+        'price': quantity*11,
+        'emailId': eid
         
         }
 
     table.put_item(Item=DynamoDict)
+    
+    
+    ses = boto3.client('ses')
+
+    email_from = 'bhushansainidss.1@gmail.com'
+    email_to = '{}'.format(eid)
+    email_cc = 'Email'
+    emaiL_subject = 'Subject'
+    email_body = 'Body'
+    pr='Order Id : {}\nYour order for {} {} of {} dollars at {} has been placed and it will be delivered within 30 mins.\nThanks for ordering your meal.\n Have a nice day.'.format(recordId,quantity,snacks,quantity*11,location)
+                
+    response = ses.send_email(
+        Source = email_from,
+        Destination={
+            'ToAddresses': [
+                email_to,
+            ]
+            
+        },
+        Message={
+            'Subject': {
+                'Data': 'ORDER CONFIRMATION FROM BOT-the-CAFE'
+            },
+            'Body': {
+                'Text': {
+                    'Data': pr
+                    
+                }
+            }
+        }
+    )
     return close(
         session_attributes,
         'Fulfilled',
         {
             'contentType': 'PlainText',
-            'content': 'Thanks, I have placed your order and your order ID is {}. It will be delivered before 30 minutes. Please let me know if you would like to order some Beverages '.format(
-                intent_request['userId']
+            'content': 'Thanks, I have placed your order and your order ID is {}. It will be delivered before 30 minutes. Please let me know if you would like to order some Beverages and if you want to continue with this order then type utterances like : i want some beverages , i am thirsty, i want a drink  '.format(
+                recordId
                 )
                       
         }
     )
+    
 
 def order_help(intent_request):
     session_attributes=None
@@ -312,18 +365,107 @@ def order_help(intent_request):
         'Fulfilled',
         {
             'contentType': 'PlainText',
-            'content': 'Our services allows you to order Fast Foods and Beverages \n Beverages are: \n 1.Coca-cola \n 2.Appy \n3.Thumps-up\n4.Beer\n5.Frooti\n6.Pepsi\nFast foods are :\n1.Pizza\n2.Fries\n3.Franky\n4.Burger\n5.Sandwich\n6.Samosa'
+            'content': 'Our services allows you to order Fast Foods and Beverages \n Beverages are: \n 1.Coca-cola \n 2.Appy \n3.Beer\n4.Frooti\n5.Pepsi\nFast foods are :\n1.Pizza\n2.Fries\n3.Franky\n4.Burger\n5.Sandwich'
       
         }
     )
+    
+def admin(intent_request):
+    dynamo = boto3.resource('dynamodb')
+    table = dynamo.Table('delivery_order')
+    login = try_ex(lambda: intent_request['currentIntent']['slots']['login'])
+    iid = try_ex(lambda: intent_request['currentIntent']['slots']['id'])
+    session_attributes = intent_request['sessionAttributes'] if intent_request['sessionAttributes'] is not None else {}
+
+    # Load confirmation history and track the current reservation.
+    reservation = json.dumps({
+        'ReservationType': 'Login',
+        'login': login
+    })
+
+    session_attributes['currentReservation'] = reservation
+
+    if intent_request['invocationSource'] == 'DialogCodeHook':
+        # Validate any slots which have been specified.  If any are invalid, re-elicit for their value
+        validation_result = validate_user(intent_request['currentIntent']['slots'])
+        if not validation_result['isValid']:
+            slots = intent_request['currentIntent']['slots']
+            slots[validation_result['violatedSlot']] = None
+
+            return elicit_slot(
+                session_attributes,
+                intent_request['currentIntent']['name'],
+                slots,
+                validation_result['violatedSlot'],
+                validation_result['message'],
+                build_response_card(
+                    'Specify {}'.format(validation_result['violatedSlot']),
+                    build_options(validation_result['violatedSlot'], login)
+                    
+                )
+            )
+        session_attributes['currentReservation'] = reservation
+        return delegate(session_attributes, intent_request['currentIntent']['slots'])
+        
+      
+    
+    logger.debug('Login under={}'.format(reservation))
+    
+    
+    try_ex(lambda: session_attributes.pop('currentReservation'))
+    session_attributes['lastConfirmedReservation'] = reservation
+    try:
+        response = table.get_item(
+            Key={
+                'id': iid
+            
+            }
+            )
+        snk=response['Item']['item']
+        qty=response['Item']['quantity']
+        rs=response['Item']['price']
+        return close(
+            session_attributes,
+            'Fulfilled',
+            {
+                'contentType': 'PlainText',
+                'content': 'Ok, your order contains {} {} of {} dollars '.format(qty,snk,rs)
+                
+                      
+            }
+        )    
+        
+    except:
+         
+    
+        return close(
+            session_attributes,
+            'Fulfilled',
+            {
+                'contentType': 'PlainText',
+                'content': 'You entered a wrong order id.'
+                
+                      
+            }
+        )    
+    
+    
+    
+    
+    
+    
+    
+    
 def order_beverages(intent_request):
     dynamo = boto3.resource('dynamodb')
-    table = dynamo.Table('drink_orders')
+    table = dynamo.Table('delivery_order')
+    
     slots = intent_request['currentIntent']['slots']
     drink = slots['drink']
-    quantity = slots['amount']
+    quantity = safe_int(try_ex(lambda: intent_request['currentIntent']['slots']['amount']))
     location = slots['Location']
-    uid= intent_request['userId']
+    recordId = str(uuid.uuid4())
+    eid = slots['email']
     
     confirmation_status = intent_request['currentIntent']['confirmationStatus']
     session_attributes = intent_request['sessionAttributes'] if intent_request['sessionAttributes'] is not None else {}
@@ -338,13 +480,14 @@ def order_beverages(intent_request):
         'ReservationType': 'Drinks',
         'Location': location,
         'amount': quantity,
-        'drink': drink
+        'drink': drink,
+        'Email':eid
     })
     session_attributes['currentReservation'] = reservation
     price=0
     if location and quantity and drink:
         
-        price = 10
+        price = 10*quantity
         session_attributes['currentReservationPrice'] = price
 
     if intent_request['invocationSource'] == 'DialogCodeHook':
@@ -378,9 +521,10 @@ def order_beverages(intent_request):
                     {
                         'Location':None,
                         'amount': None,
-                        'drink': None
+                        'drink': None,
+                        'email':None
                     },
-                    'Location',
+                    'drink',
                     {
                         'contentType': 'PlainText',
                         'content': 'What beverages do you want to order? We have'
@@ -408,7 +552,7 @@ def order_beverages(intent_request):
                         intent_request['currentIntent']['name'],
                         {
                             'Location': last_confirmed_reservation['address'],
-                            
+                            'email': last_confirmed_reservation['Email'],
                             'drink': None,
                             'amount': None
                         },
@@ -466,22 +610,57 @@ def order_beverages(intent_request):
     session_attributes['lastConfirmedReservation'] = reservation
     
     DynamoDict = {
-        'uid': uid,
-        'drink': drink, 
+        'id': recordId,
+        'item': drink, 
         'quantity': quantity, 
-        'location': location,
-        'price': price
+        'address': location,
+        'price': price,
+        'emailId': eid
         
         }
-
+        
+    
+    
     table.put_item(Item=DynamoDict)
+    
+    #Code for sending emails
+    
+    ses = boto3.client('ses')
+    #email=eid
+    email_from = 'bhushansainidss.1@gmail.com'
+    email_to = '{}'.format(eid)
+    email_cc = 'Email'
+    emaiL_subject = 'Subject'
+    email_body = 'Body'
+    pr='Order Id : {}\nYour order for {} {} of {} dollars at {} has been placed and it will be delivered within 30 mins.\nThanks for ordering your meal.\n Have a nice day.'.format(recordId,quantity,drink,quantity*10,location)
+                
+    response = ses.send_email(
+        Source = email_from,
+        Destination={
+            'ToAddresses': [
+                email_to,
+            ]
+            
+        },
+        Message={
+            'Subject': {
+                'Data': 'ORDER CONFIRMATION FROM BOT-the-CAFE'
+            },
+            'Body': {
+                'Text': {
+                    'Data': pr
+                    
+                }
+            }
+        }
+    )
     return close(
         session_attributes,
         'Fulfilled',
         {
             'contentType': 'PlainText',
             'content': 'Thanks, I have placed your order and your order ID is {}. It will be delivered before 30 minutes.'.format(
-                intent_request['userId']
+                recordId
                 )
         }
     )
@@ -506,7 +685,8 @@ def dispatch(intent_request):
         return order_snacks(intent_request)
     elif intent_name == 'Beverages':
         return order_beverages(intent_request)
-
+    elif intent_name == 'Admin':
+        return admin(intent_request)
     raise Exception('Intent with name ' + intent_name + ' not supported')
 
 

@@ -6,7 +6,7 @@
   },
   "resource": {
     "name": "FoodDelivery",
-    "version": "6",
+    "version": "10",
     "intents": [
       {
         "name": "Help",
@@ -37,12 +37,12 @@
           "messages": [
             {
               "contentType": "PlainText",
-              "content": "Okay, your order has been cancelled."
+              "content": "Ok, your order has been cancelled."
             }
           ]
         },
         "name": "Beverages",
-        "version": "11",
+        "version": "25",
         "fulfillmentActivity": {
           "type": "CodeHook",
           "codeHook": {
@@ -59,7 +59,9 @@
           "i want {amount} {drink} ",
           "i also want some {drink}",
           "i want some beverage",
-          "i would like to have {drink}"
+          "i would like to have {drink}",
+          "i want {drink}",
+          "i want a drink"
         ],
         "slots": [
           {
@@ -83,7 +85,7 @@
             "name": "drink",
             "slotConstraint": "Required",
             "slotType": "Beverages",
-            "slotTypeVersion": "1",
+            "slotTypeVersion": "2",
             "valueElicitationPrompt": {
               "messages": [
                 {
@@ -95,6 +97,23 @@
               "responseCard": "{\"version\":1,\"contentType\":\"application/vnd.amazonaws.card.generic\",\"genericAttachments\":[]}"
             },
             "priority": 1,
+            "sampleUtterances": []
+          },
+          {
+            "name": "email",
+            "slotConstraint": "Required",
+            "slotType": "email",
+            "slotTypeVersion": "2",
+            "valueElicitationPrompt": {
+              "messages": [
+                {
+                  "contentType": "PlainText",
+                  "content": "What is your email address?"
+                }
+              ],
+              "maxAttempts": 2
+            },
+            "priority": 5,
             "sampleUtterances": []
           },
           {
@@ -123,7 +142,7 @@
           "messages": [
             {
               "contentType": "PlainText",
-              "content": "The price of your {amount} {drink} is [currentReservationPrice] dollars.Should we confirm it."
+              "content": "The price of your {amount} {drink} is [currentReservationPrice] dollars. Should we confirm it."
             }
           ],
           "maxAttempts": 3
@@ -134,16 +153,79 @@
         }
       },
       {
+        "name": "Admin",
+        "version": "12",
+        "fulfillmentActivity": {
+          "type": "CodeHook",
+          "codeHook": {
+            "uri": "arn:aws:lambda:us-east-1:513284067380:function:food_delivery",
+            "messageVersion": "1.0"
+          }
+        },
+        "sampleUtterances": [
+          "Show me order details.",
+          "details",
+          "order details",
+          "What was my order"
+        ],
+        "slots": [
+          {
+            "name": "id",
+            "slotConstraint": "Required",
+            "slotType": "id",
+            "slotTypeVersion": "1",
+            "valueElicitationPrompt": {
+              "messages": [
+                {
+                  "contentType": "PlainText",
+                  "content": "Give your order id."
+                }
+              ],
+              "maxAttempts": 2,
+              "responseCard": "{\"version\":1,\"contentType\":\"application/vnd.amazonaws.card.generic\"}"
+            },
+            "priority": 2,
+            "sampleUtterances": []
+          },
+          {
+            "name": "login",
+            "slotConstraint": "Required",
+            "slotType": "login",
+            "slotTypeVersion": "1",
+            "valueElicitationPrompt": {
+              "messages": [
+                {
+                  "contentType": "PlainText",
+                  "content": "Enter the password."
+                },
+                {
+                  "contentType": "PlainText",
+                  "content": "Password please."
+                }
+              ],
+              "maxAttempts": 2,
+              "responseCard": "{\"version\":1,\"contentType\":\"application/vnd.amazonaws.card.generic\",\"genericAttachments\":[]}"
+            },
+            "priority": 1,
+            "sampleUtterances": []
+          }
+        ],
+        "dialogCodeHook": {
+          "uri": "arn:aws:lambda:us-east-1:513284067380:function:food_delivery",
+          "messageVersion": "1.0"
+        }
+      },
+      {
         "rejectionStatement": {
           "messages": [
             {
               "contentType": "PlainText",
-              "content": "Okay, we have cancelled your order."
+              "content": "Ok, your order has been cancelled."
             }
           ]
         },
         "name": "FastFood",
-        "version": "9",
+        "version": "26",
         "fulfillmentActivity": {
           "type": "CodeHook",
           "codeHook": {
@@ -184,10 +266,27 @@
             "sampleUtterances": []
           },
           {
+            "name": "email",
+            "slotConstraint": "Required",
+            "slotType": "email",
+            "slotTypeVersion": "2",
+            "valueElicitationPrompt": {
+              "messages": [
+                {
+                  "contentType": "PlainText",
+                  "content": "What is your email id?"
+                }
+              ],
+              "maxAttempts": 2
+            },
+            "priority": 4,
+            "sampleUtterances": []
+          },
+          {
             "name": "Fast",
             "slotConstraint": "Required",
             "slotType": "Snacks",
-            "slotTypeVersion": "1",
+            "slotTypeVersion": "2",
             "valueElicitationPrompt": {
               "messages": [
                 {
@@ -245,30 +344,35 @@
     "slotTypes": [
       {
         "name": "Snacks",
+        "version": "2",
+        "enumerationValues": [
+          {
+            "value": "Burger"
+          },
+          {
+            "value": "Sandwich"
+          },
+          {
+            "value": "Franky"
+          },
+          {
+            "value": "Pizza"
+          },
+          {
+            "value": "Samosa"
+          },
+          {
+            "value": "Fries"
+          }
+        ],
+        "valueSelectionStrategy": "ORIGINAL_VALUE"
+      },
+      {
+        "name": "id",
         "version": "1",
         "enumerationValues": [
           {
-            "value": "Burger",
-            "synonyms": []
-          },
-          {
-            "value": "Sandwich",
-            "synonyms": []
-          },
-          {
-            "value": "Franky",
-            "synonyms": []
-          },
-          {
-            "value": "Pizza",
-            "synonyms": []
-          },
-          {
-            "value": "Ice Cream",
-            "synonyms": []
-          },
-          {
-            "value": "French Fries",
+            "value": "169118fa-33be-490a-b1ec-7d9776c83de2",
             "synonyms": []
           }
         ],
@@ -276,31 +380,43 @@
       },
       {
         "name": "Beverages",
+        "version": "2",
+        "enumerationValues": [
+          {
+            "value": "Coca-Cola"
+          },
+          {
+            "value": "Pepsi"
+          },
+          {
+            "value": "Appy"
+          },
+          {
+            "value": "Frooti"
+          },
+          {
+            "value": "Beer"
+          }
+        ],
+        "valueSelectionStrategy": "ORIGINAL_VALUE"
+      },
+      {
+        "name": "login",
         "version": "1",
         "enumerationValues": [
           {
-            "value": "Coca-Cola",
+            "value": "sumit",
             "synonyms": []
-          },
+          }
+        ],
+        "valueSelectionStrategy": "ORIGINAL_VALUE"
+      },
+      {
+        "name": "email",
+        "version": "2",
+        "enumerationValues": [
           {
-            "value": "Wine",
-            "synonyms": []
-          },
-          {
-            "value": "Pepsi",
-            "synonyms": []
-          },
-          {
-            "value": "Whisky",
-            "synonyms": []
-          },
-          {
-            "value": "Frooti",
-            "synonyms": []
-          },
-          {
-            "value": "Beer",
-            "synonyms": []
+            "value": "bhushansainidss.1@gmail.com"
           }
         ],
         "valueSelectionStrategy": "ORIGINAL_VALUE"
